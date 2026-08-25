@@ -10,7 +10,10 @@
     "preview": "vite preview --host=127.0.0.1 --port=4173",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run lint && npm test && npm run build"
+    "check": "npm run check:frontend && npm run check:backend && npm run check:contract",
+    "check:frontend": "npm run lint && npm test && npm run build",
+    "check:backend": "composer --working-dir=backend validate --strict && composer --working-dir=backend audit && composer --working-dir=backend analyse && composer --working-dir=backend test",
+    "check:contract": "redocly lint docs/api/openapi.yaml"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
@@ -21,6 +24,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@redocly/cli": "2.47.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^6.0.2",

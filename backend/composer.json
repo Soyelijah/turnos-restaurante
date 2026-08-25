@@ -1,0 +1,47 @@
+{
+  "name": "zgamersa/garzon-turnos-api",
+  "description": "API segura para GarzónTurnos Pro",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "php-di/php-di": "^7.1",
+    "ramsey/uuid": "^4.7",
+    "robmorgan/phinx": "^0.16",
+    "slim/psr7": "^1.8",
+    "slim/slim": "^4.15",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "GarzonTurnos\\Api\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "GarzonTurnos\\Api\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "analyse": "phpstan analyse --memory-limit=512M",
+    "test": "phpunit",
+    "db:migrate": "phinx migrate",
+    "db:rollback": "phinx rollback",
+    "lint": "php -l public/index.php"
+  },
+  "config": {
+    "allow-plugins": {},
+    "optimize-autoloader": true,
+    "platform": {
+      "php": "8.2.0"
+    },
+    "sort-packages": true
+  }
+}

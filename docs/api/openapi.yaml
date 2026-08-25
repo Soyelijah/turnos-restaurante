@@ -1,0 +1,264 @@
+openapi: 3.1.0
+info:
+  title: GarzónTurnos Pro API
+  version: 1.0.0
+  description: Contrato de la fase inicial de autenticación segura.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /api/v1
+tags:
+  - name: System
+    description: Estado operativo y diagnóstico básico de la API.
+  - name: Authentication
+    description: Protección CSRF y ciclo de vida de la sesión del usuario.
+paths:
+  /health:
+    get:
+      summary: Consultar el estado de la API
+      tags: [System]
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: API disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+  /auth/csrf:
+    get:
+      summary: Obtener un token CSRF
+      tags: [Authentication]
+      operationId: getCsrfToken
+      security: []
+      responses:
+        '200':
+          description: Token CSRF ligado a la sesión del servidor
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+            Set-Cookie:
+              description: Cookie opaca de sesión anónima con HttpOnly y SameSite=Strict.
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+  /auth/login:
+    post:
+      summary: Iniciar una sesión
+      tags: [Authentication]
+      operationId: login
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Sesión autenticada
+          headers:
+            Set-Cookie:
+              description: Cookie de sesión rotada después de autenticar.
+              schema: { type: string }
+            X-CSRF-Token:
+              description: Token CSRF nuevo ligado a la sesión rotada.
+              schema: { type: string, minLength: 32, maxLength: 256 }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          $ref: '#/components/responses/InvalidCredentials'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/session:
+    get:
+      summary: Consultar la sesión actual
+      tags: [Authentication]
+      operationId: getSession
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Usuario autenticado actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /auth/logout:
+    post:
+      summary: Cerrar la sesión actual
+      tags: [Authentication]
+      operationId: logout
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200':
+          description: Sesión invalidada
+          headers:
+            Set-Cookie:
+              description: Expira inmediatamente la cookie de sesión.
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: GTSESSID
+  parameters:
+    CsrfHeader:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 32
+        maxLength: 256
+  schemas:
+    UserRole:
+      type: string
+      enum: [admin, worker]
+    WorkerStatus:
+      type: string
+      enum: [active, vacation, medical_leave, resigned, inactive]
+    SessionUser:
+      type: object
+      additionalProperties: false
+      required: [id, code, name, email, phone, avatar, role, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, minLength: 2, maxLength: 24 }
+        name: { type: string, minLength: 2, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 254 }
+        phone: { type: string, pattern: '^\\+56 9 \\d{4} \\d{4}$' }
+        avatar: { type: string, maxLength: 2048 }
+        role: { $ref: '#/components/schemas/UserRole' }
+        status: { $ref: '#/components/schemas/WorkerStatus' }
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [identifier, pin]
+      properties:
+        identifier: { type: string, minLength: 2, maxLength: 254 }
+        pin: { type: string, pattern: '^\\d{4,12}$' }
+    HealthData:
+      type: object
+      additionalProperties: false
+      required: [status, timestamp]
+      properties:
+        status: { type: string, const: ok }
+        timestamp: { type: string, format: date-time }
+    CsrfData:
+      type: object
+      additionalProperties: false
+      required: [csrfToken]
+      properties:
+        csrfToken: { type: string, minLength: 32, maxLength: 256 }
+    LogoutData:
+      type: object
+      additionalProperties: false
+      required: [authenticated]
+      properties:
+        authenticated: { type: boolean, const: false }
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [success, code, message]
+      properties:
+        success: { type: boolean, const: false }
+        code: { type: string }
+        message: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success: { type: boolean, const: true }
+        data: { $ref: '#/components/schemas/HealthData' }
+    CsrfResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success: { type: boolean, const: true }
+        data: { $ref: '#/components/schemas/CsrfData' }
+    SessionResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success: { type: boolean, const: true }
+        data: { $ref: '#/components/schemas/SessionUser' }
+    LogoutResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success: { type: boolean, const: true }
+        data: { $ref: '#/components/schemas/LogoutData' }
+  responses:
+    InvalidRequest:
+      description: Solicitud malformada
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    InvalidCredentials:
+      description: Identificador o PIN incorrectos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    InvalidCsrf:
+      description: Token CSRF ausente o inválido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    ValidationError:
+      description: Payload inválido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    RateLimited:
+      description: Demasiados intentos de acceso
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unauthenticated:
+      description: No existe una sesión válida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
