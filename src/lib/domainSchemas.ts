@@ -5,15 +5,20 @@ const shortText = z.string().trim().max(240);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTime = z.string().datetime({ offset: true });
 const color = z.string().regex(/^#[0-9a-f]{6}$/i);
+const remoteAvatar = z.string().trim().url().max(2_048);
+const uploadedAvatar = z.string()
+  .max(2_800_000)
+  .regex(/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i);
+const optionalEmail = z.union([z.literal(''), z.string().trim().email().max(254)]);
 
 export const workerSchema = z.object({
   id,
   name: z.string().trim().min(2).max(100),
   code: z.string().trim().min(2).max(24),
   pin: z.string().trim().min(4).max(12),
-  email: z.string().trim().email().max(254),
+  email: optionalEmail,
   phone: shortText,
-  avatar: z.string().trim().url().max(2_048),
+  avatar: z.union([z.literal(''), remoteAvatar, uploadedAvatar]),
   role: z.enum(['admin', 'worker']),
   status: z.enum(['active', 'vacation', 'medical_leave', 'resigned', 'inactive']),
   preferredRestDay: z.number().int().min(0).max(6).optional(),
@@ -108,4 +113,3 @@ export const backupSchema = z.object({
   swapRequests: z.array(swapRequestSchema).max(10_000),
   auditLogs: z.array(auditLogSchema).max(5_000),
 }).strict();
-

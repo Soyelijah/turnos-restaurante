@@ -14,6 +14,12 @@ describe('domain validation', () => {
     expect(workerSchema.parse(worker)).toEqual(worker);
   });
 
+  it('keeps an uploaded profile image valid after the app reloads', () => {
+    const uploadedAvatar = `data:image/jpeg;base64,${'A'.repeat(250_000)}`;
+
+    expect(workerSchema.safeParse({ ...worker, avatar: uploadedAvatar }).success).toBe(true);
+  });
+
   it('rejects executable or unbounded backup shapes', () => {
     const result = backupSchema.safeParse({ schema: 'garzon_turnos_backup_v5', workers: [worker] });
     expect(result.success).toBe(false);
@@ -23,4 +29,3 @@ describe('domain validation', () => {
     expect(workerSchema.safeParse({ ...worker, role: 'owner', hireDate: '10/01/2026' }).success).toBe(false);
   });
 });
-

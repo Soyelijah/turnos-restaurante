@@ -23,11 +23,13 @@ export function loadValidatedArray<T>(key: string, schema: z.ZodType<T>, fallbac
   }
 }
 
-export function saveJson(key: string, value: unknown): void {
+export function saveJson(key: string, value: unknown): boolean {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
     // The UI remains usable when storage is unavailable or quota is exhausted.
+    return false;
   }
 }
 

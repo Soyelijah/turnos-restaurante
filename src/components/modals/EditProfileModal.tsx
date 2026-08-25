@@ -40,6 +40,7 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
   const [avatar, setAvatar] = useState(currentUser.avatar || '');
   const [notes, setNotes] = useState(currentUser.notes || '');
   const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -49,6 +50,10 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setSaveError('Usa una imagen JPG, PNG o WebP.');
+        return;
+      }
       if (file.size > 2 * 1024 * 1024) {
         alert('La imagen no debe superar los 2MB.');
         return;
@@ -67,7 +72,7 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
     e.preventDefault();
     if (!name.trim()) return;
 
-    updateWorker(currentUser.id, {
+    const saved = updateWorker(currentUser.id, {
       name: name.trim(),
       phone: phone.trim(),
       email: email.trim(),
@@ -76,6 +81,12 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
       notes: notes.trim(),
     });
 
+    if (!saved) {
+      setSaveError('No fue posible guardar los cambios. Revisa el correo, usa un PIN de 4 a 6 dígitos y confirma que la foto no supere 2 MB.');
+      return;
+    }
+
+    setSaveError('');
     setIsSaved(true);
     triggerConfetti();
 
@@ -107,6 +118,12 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
             </p>
           </div>
         </div>
+
+        {saveError && (
+          <div role="alert" className="mb-5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs font-semibold leading-5 text-rose-200">
+            {saveError}
+          </div>
+        )}
 
         {isSaved ? (
           <div className="p-8 text-center space-y-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl">
@@ -263,6 +280,7 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
                   <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                   <input
                     type="password"
+                    minLength={4}
                     maxLength={6}
                     required
                     value={pin}

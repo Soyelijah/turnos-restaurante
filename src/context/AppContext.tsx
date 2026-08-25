@@ -56,7 +56,7 @@ interface AppContextType {
 
   // Workers CRUD
   addWorker: (workerData: Omit<Worker, 'id'>) => boolean;
-  updateWorker: (id: string, workerData: Partial<Worker>) => void;
+  updateWorker: (id: string, workerData: Partial<Worker>) => boolean;
   deleteWorker: (id: string) => void;
   updateWorkerStatus: (id: string, status: WorkerStatus, reason?: string) => void;
 
@@ -294,8 +294,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  const updateWorker = (id: string, workerData: Partial<Worker>) => {
-    if (currentUser.role !== 'admin' && currentUser.id !== id) return;
+  const updateWorker = (id: string, workerData: Partial<Worker>): boolean => {
+    if (currentUser.role !== 'admin' && currentUser.id !== id) return false;
     const safeWorkerData = currentUser.role === 'admin'
       ? workerData
       : {
@@ -307,15 +307,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           notes: workerData.notes,
           pin: workerData.pin,
         };
-    setWorkers((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, ...safeWorkerData } : w))
+    const nextWorkers = workers.map((worker) =>
+      worker.id === id ? { ...worker, ...safeWorkerData } : worker
     );
+    const validatedWorkers = z.array(workerSchema).min(1).max(50).safeParse(nextWorkers);
+    if (!validatedWorkers.success || !saveJson(STORAGE_KEYS.WORKERS, validatedWorkers.data)) {
+      return false;
+    }
+
+    setWorkers(validatedWorkers.data);
     addAuditLog(
       currentUser.name,
       'Trabajador Actualizado',
       `Se modificaron los datos del trabajador ID ${id}.`,
       'worker_status'
     );
+    return true;
   };
 
   const deleteWorker = (id: string) => {
