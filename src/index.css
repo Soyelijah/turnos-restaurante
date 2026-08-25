@@ -110,6 +110,8 @@
 
   html {
     background: var(--surface-ink);
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   body {
@@ -120,6 +122,14 @@
       radial-gradient(circle at 50% -20%, rgba(79, 70, 229, 0.17), transparent 36rem),
       var(--surface-ink);
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable='true'] {
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   button,
