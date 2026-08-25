@@ -282,7 +282,7 @@ export const ScheduleCalendarView: React.FC = () => {
   const hasShiftsThisWeek = weekShifts.length > 0;
 
   return (
-    <div className="space-y-6 pb-20 md:pb-8">
+    <div className="space-y-6 pb-20 lg:pb-8">
       {/* Empty Week Notification Banner */}
       {!hasShiftsThisWeek && (
         <div className="bg-gradient-to-r from-amber-500/15 via-indigo-500/15 to-purple-500/15 border-2 border-dashed border-amber-500/40 rounded-2xl p-5 text-center sm:text-left sm:flex items-center justify-between gap-4 shadow-lg backdrop-blur-sm">
