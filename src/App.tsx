@@ -13,9 +13,17 @@ import { LoginModal } from './views/LoginModal';
 import { EditProfileModal } from './components/modals/EditProfileModal';
 
 const MainContent: React.FC = () => {
-  const { activeTab, currentUser } = useApp();
+  const { activeTab, currentUser, isAuthenticated } = useApp();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <LoginModal isOpen onClose={() => undefined} />
+      </div>
+    );
+  }
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -55,10 +63,7 @@ const MainContent: React.FC = () => {
       {/* Install PWA Prompt Modal */}
       <InstallPWAModal />
 
-      {/* Identity switching exists only in the local preview. */}
-      {import.meta.env.DEV && (
-        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-      )}
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
       {/* Profile & Personal Info Modal (Accessible everywhere) */}
       <EditProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />

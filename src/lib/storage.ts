@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   SWAPS: 'garzon_turnos_swaps_v13',
   LOGS: 'garzon_turnos_logs_v13',
   CURRENT_USER_ID: 'garzon_turnos_current_user_id_v13',
+  SESSION: 'garzon_turnos_session_v13',
 } as const;
 
 export function loadValidatedArray<T>(key: string, schema: z.ZodType<T>, fallback: T): T {

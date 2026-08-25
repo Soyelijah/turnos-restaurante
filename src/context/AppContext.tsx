@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useReducer } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Worker,
@@ -29,6 +29,7 @@ import {
   workerSchema,
 } from '../lib/domainSchemas';
 import { clearAppStorage, createId, loadText, loadValidatedArray, saveJson, saveText, STORAGE_KEYS } from '../lib/storage';
+import { findWorkerByCredentials, sessionReducer } from '../lib/session';
 
 interface AppContextType {
   currentUser: Worker;
@@ -42,11 +43,14 @@ interface AppContextType {
   activeTab: string;
   isPWAInstallOpen: boolean;
   fairnessMetrics: FairnessMetric[];
+  isAuthenticated: boolean;
   
   // Navigation & User
   setActiveTab: (tab: string) => void;
   setCurrentUser: (worker: Worker) => void;
   switchUserById: (workerId: string) => void;
+  authenticate: (identifier: string, pin: string) => boolean;
+  logout: () => void;
   setIsPWAInstallOpen: (open: boolean) => void;
   setSelectedWeekDate: (date: Date) => void;
 
@@ -160,6 +164,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     return loadText(STORAGE_KEYS.CURRENT_USER_ID, 'worker-admin');
   });
+  const [session, dispatchSession] = useReducer(sessionReducer, undefined, () => ({
+    isAuthenticated: loadText(STORAGE_KEYS.SESSION, 'true') === 'true',
+  }));
 
   const [activeTab, setActiveTab] = useState<string>('my_day');
   const [isPWAInstallOpen, setIsPWAInstallOpen] = useState<boolean>(false);
@@ -192,6 +199,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     saveText(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
   }, [currentUserId]);
+
+  useEffect(() => {
+    saveText(STORAGE_KEYS.SESSION, String(session.isAuthenticated));
+  }, [session.isAuthenticated]);
 
   // Current logged in worker/admin
   const currentUser = useMemo(() => {
@@ -243,7 +254,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const switchUserById = (workerId: string) => {
     if (import.meta.env.DEV && workers.some((worker) => worker.id === workerId)) {
       setCurrentUserId(workerId);
+      dispatchSession({ type: 'login' });
     }
+  };
+
+  const authenticate = (identifier: string, pin: string): boolean => {
+    const worker = findWorkerByCredentials(workers, identifier, pin);
+    if (!worker) return false;
+    setCurrentUserId(worker.id);
+    dispatchSession({ type: 'login' });
+    setActiveTab('my_day');
+    return true;
+  };
+
+  const logout = () => {
+    dispatchSession({ type: 'logout' });
+    setActiveTab('my_day');
+    setIsPWAInstallOpen(false);
   };
 
   // Worker CRUD
@@ -799,9 +826,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeTab,
         isPWAInstallOpen,
         fairnessMetrics,
+        isAuthenticated: session.isAuthenticated,
         setActiveTab,
         setCurrentUser: (w) => setCurrentUserId(w.id),
         switchUserById,
+        authenticate,
+        logout,
         setIsPWAInstallOpen,
         setSelectedWeekDate,
         addWorker,

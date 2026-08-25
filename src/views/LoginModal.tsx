@@ -15,7 +15,7 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   isOpen,
   onClose,
 }) => {
-  const { workers, switchUserById, currentUser } = useApp();
+  const { workers, switchUserById, currentUser, authenticate, isAuthenticated } = useApp();
   const [code, setCode] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -24,19 +24,17 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const found = workers.find(
-      (w) =>
-        (w.code.toLowerCase() === code.trim().toLowerCase() ||
-          w.email.toLowerCase() === code.trim().toLowerCase()) &&
-        w.pin === pin.trim()
-    );
-
-    if (found) {
-      switchUserById(found.id);
+    if (authenticate(code, pin)) {
       setError('');
+      setCode('');
+      setPin('');
       onClose();
     } else {
-      setError('Código/Usuario o PIN incorrecto. Revisa tus credenciales o usa el selector demo.');
+      setError(
+        import.meta.env.DEV
+          ? 'Código/Usuario o PIN incorrecto. Revisa tus credenciales o usa el selector demo.'
+          : 'Código/Usuario o PIN incorrecto. Revisa tus credenciales e inténtalo nuevamente.',
+      );
     }
   };
 
@@ -48,12 +46,14 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-md bg-slate-900 border border-slate-700/90 rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-100 max-h-[90vh] overflow-y-auto">
-        <button
+        {isAuthenticated && <button
+          type="button"
           onClick={onClose}
+          aria-label="Cerrar acceso"
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
         >
           <X className="w-5 h-5" />
-        </button>
+        </button>}
 
         {/* Brand Header */}
         <div className="text-center space-y-2 mb-6">
@@ -62,7 +62,9 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
           </div>
           <h2 className="text-xl font-extrabold text-white">Acceso a GarzónTurnos</h2>
           <p className="text-xs text-slate-400">
-            Ingresa con tus credenciales privadas o cambia de perfil de prueba
+            {import.meta.env.DEV
+              ? 'Ingresa con tus credenciales privadas o cambia de perfil de prueba'
+              : 'Ingresa con las credenciales asignadas por tu encargado'}
           </p>
         </div>
 
@@ -116,8 +118,8 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
           </button>
         </form>
 
-        {/* Quick Demo Switcher */}
-        <div className="pt-4 border-t border-slate-800 space-y-3">
+        {/* Quick switching and sample PINs are local-development tools only. */}
+        {import.meta.env.DEV && <div className="pt-4 border-t border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -160,7 +162,7 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
               );
             })}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

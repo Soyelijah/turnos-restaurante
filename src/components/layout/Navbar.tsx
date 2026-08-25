@@ -13,7 +13,6 @@ import {
   LogIn,
   KeyRound,
   UserCheck,
-  ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -29,6 +28,7 @@ export const Navbar: React.FC<{
     setActiveTab,
     setIsPWAInstallOpen,
     swapRequests,
+    logout,
   } = useApp();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -216,7 +216,7 @@ export const Navbar: React.FC<{
                       </button>
                     )}
 
-                    {import.meta.env.DEV && <button
+                    <button
                       id="menu-login-pin-btn"
                       onClick={() => {
                         setIsMenuOpen(false);
@@ -226,26 +226,19 @@ export const Navbar: React.FC<{
                     >
                       <KeyRound className="w-4 h-4 text-amber-400" />
                       <span>Ingresar con Código / PIN</span>
-                    </button>}
+                    </button>
 
-                    {import.meta.env.DEV && <button
+                    <button
                       id="menu-logout-btn"
                       onClick={() => {
                         setIsMenuOpen(false);
-                        onOpenLogin();
+                        logout();
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors text-left border-t border-slate-800/80 mt-1 pt-2"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Cerrar Sesión / Cambiar</span>
-                    </button>}
-
-                    {!import.meta.env.DEV && (
-                      <div className="flex items-center gap-2.5 px-3 py-2 text-[11px] font-semibold text-emerald-300">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Sesión privada protegida</span>
-                      </div>
-                    )}
+                    </button>
                   </div>
                 </div>
               )}
