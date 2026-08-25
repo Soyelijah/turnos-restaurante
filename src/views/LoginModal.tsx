@@ -85,19 +85,13 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
             </div>
           </header>
 
-          <div className="login-waiter-entry pointer-events-none absolute bottom-0 right-[-2.5rem] z-20 w-[46%] max-w-[315px]" aria-hidden="true">
-            <div className="login-shift-badge absolute right-[72%] top-[24%] z-30 flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/15 bg-slate-950/85 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-xl backdrop-blur-md">
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-400 text-slate-950">
-                <Check className="h-3 w-3" />
-              </span>
-              Turno listo
-            </div>
+          <div className="login-waiter-walk pointer-events-none absolute bottom-0 right-[-1.5rem] z-20 w-[46%] max-w-[315px]" aria-hidden="true">
             <img
               src="/assets/garzon-service.webp"
               alt=""
-              className="login-waiter-idle relative z-20 h-auto w-full drop-shadow-[0_28px_28px_rgba(0,0,0,0.55)]"
+              className="login-waiter-body relative z-20 h-auto w-full drop-shadow-[0_28px_28px_rgba(0,0,0,0.55)]"
             />
-            <span className="absolute bottom-5 left-1/2 z-10 h-8 w-3/5 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
+            <span className="login-waiter-shadow absolute bottom-5 left-1/2 z-10 h-8 w-3/5 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
           </div>
 
           <div className="relative z-20 max-w-[410px] p-9 xl:p-11">
@@ -144,11 +138,11 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
             <div className="absolute inset-0 opacity-35">
               <img src="/og.png" alt="" className="h-full w-full object-cover object-[75%_58%]" />
             </div>
-            <div className="login-waiter-entry absolute -bottom-7 right-2 h-56" aria-hidden="true">
+            <div className="login-waiter-walk absolute -bottom-7 right-2 h-56" aria-hidden="true">
               <img
                 src="/assets/garzon-service.webp"
                 alt=""
-                className="login-waiter-idle h-full w-auto drop-shadow-[0_12px_18px_rgba(0,0,0,0.55)]"
+                className="login-waiter-body h-full w-auto drop-shadow-[0_12px_18px_rgba(0,0,0,0.55)]"
               />
             </div>
             <div className="relative z-10 flex items-center gap-3">

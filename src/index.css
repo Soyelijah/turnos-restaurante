@@ -7,48 +7,77 @@
     #030914;
 }
 
-.login-waiter-entry {
-  animation: waiter-arrival 900ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+.login-waiter-walk {
+  --waiter-start-x: -160px;
+  animation: waiter-route 9s cubic-bezier(0.45, 0.05, 0.25, 1) infinite both;
+  will-change: transform, opacity;
 }
 
-.login-waiter-idle {
+.login-waiter-body {
   transform-origin: 50% 100%;
-  animation: waiter-service-idle 4.2s 900ms ease-in-out infinite;
+  animation: waiter-steps 9s linear infinite;
+  will-change: transform;
 }
 
-.login-shift-badge {
-  animation: shift-badge-arrival 650ms 650ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+.login-waiter-shadow {
+  animation: waiter-shadow 9s linear infinite;
 }
 
-@keyframes waiter-arrival {
-  from {
-    opacity: 0;
-    transform: translate3d(4.5rem, 1.5rem, 0) scale(0.94);
+@media (min-width: 1024px) {
+  .login-waiter-walk {
+    --waiter-start-x: -390px;
   }
-  to {
+}
+
+@keyframes waiter-route {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--waiter-start-x), 10px, 0) scale(0.92);
+  }
+  5% {
+    opacity: 1;
+  }
+  44%,
+  88% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
-}
-
-@keyframes waiter-service-idle {
-  0%,
+  94% {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0) scale(1);
+  }
   100% {
-    transform: translateY(0) rotate(-0.25deg);
-  }
-  50% {
-    transform: translateY(-7px) rotate(0.25deg);
+    opacity: 0;
+    transform: translate3d(var(--waiter-start-x), 10px, 0) scale(0.92);
   }
 }
 
-@keyframes shift-badge-arrival {
-  from {
-    opacity: 0;
-    transform: translate3d(1rem, 0.5rem, 0) scale(0.9);
+@keyframes waiter-steps {
+  0%, 10%, 20%, 30%, 40%, 44% {
+    transform: translateY(0) rotate(0deg) scaleY(1);
   }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+  5%, 25% {
+    transform: translateY(-9px) rotate(-1.4deg) scaleY(0.985);
+  }
+  15%, 35% {
+    transform: translateY(-9px) rotate(1.4deg) scaleY(0.985);
+  }
+  52%, 68%, 84%, 100% {
+    transform: translateY(0) rotate(-0.2deg) scaleY(1);
+  }
+  60%, 76% {
+    transform: translateY(-3px) rotate(0.2deg) scaleY(1);
+  }
+}
+
+@keyframes waiter-shadow {
+  0%, 10%, 20%, 30%, 40%, 44%, 100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scaleX(1);
+  }
+  5%, 15%, 25%, 35% {
+    opacity: 0.35;
+    transform: translateX(-50%) scaleX(0.78);
   }
 }
 
@@ -135,10 +164,25 @@
     transition-duration: 0.01ms !important;
   }
 
-  .login-waiter-entry,
-  .login-waiter-idle,
-  .login-shift-badge {
-    animation: none !important;
+  .login-waiter-walk {
+    animation-name: waiter-route !important;
+    animation-duration: 12s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .login-waiter-body {
+    animation-name: waiter-steps !important;
+    animation-duration: 12s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .login-waiter-shadow {
+    animation-name: waiter-shadow !important;
+    animation-duration: 12s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
   }
 }
 
