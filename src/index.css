@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
+.login-stage {
+  background:
+    radial-gradient(circle at 14% 18%, rgba(245, 158, 11, 0.12), transparent 25rem),
+    radial-gradient(circle at 90% 84%, rgba(30, 64, 175, 0.2), transparent 30rem),
+    #030914;
+}
+
+@media (min-width: 1024px) {
+  .service-ticket-pane::before {
+    position: absolute;
+    inset-block: 0;
+    left: -1px;
+    z-index: 2;
+    width: 12px;
+    background: radial-gradient(circle at 0 12px, transparent 0 6px, #f5f1e8 6.5px) 0 0 / 12px 24px repeat-y;
+    content: '';
+    pointer-events: none;
+  }
+}
+
 @layer base {
   :root {
     color-scheme: dark;
