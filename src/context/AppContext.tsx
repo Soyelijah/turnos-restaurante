@@ -18,6 +18,17 @@ import {
   formatDateToISO,
   calculateFairnessMetrics,
 } from '../utils/schedulerEngine';
+import { z } from 'zod';
+import {
+  auditLogSchema,
+  backupSchema,
+  cleaningZoneSchema,
+  shiftSchema,
+  swapRequestSchema,
+  taskSchema,
+  workerSchema,
+} from '../lib/domainSchemas';
+import { clearAppStorage, createId, loadText, loadValidatedArray, saveJson, saveText, STORAGE_KEYS } from '../lib/storage';
 
 interface AppContextType {
   currentUser: Worker;
@@ -84,90 +95,35 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  VERSION: 'garzon_turnos_schema_v12',
-  WORKERS: 'garzon_turnos_workers_v12',
-  ZONES: 'garzon_turnos_zones_v12',
-  SHIFTS: 'garzon_turnos_shifts_v12',
-  TASKS: 'garzon_turnos_tasks_v12',
-  SWAPS: 'garzon_turnos_swaps_v12',
-  LOGS: 'garzon_turnos_logs_v12',
-  CURRENT_USER_ID: 'garzon_turnos_current_user_id_v12',
-};
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Initial State Loaders with Automatic Real-Workers Migration Check
-  const [workers, setWorkers] = useState<Worker[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.WORKERS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Check if old placeholder worker names exist
-        const hasPlaceholders = parsed.some((w: Worker) => 
-          w.name.includes('Mateo') || w.name.includes('Sofía') || w.name.includes('Diego')
-        );
-        if (!hasPlaceholders && Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {
-      // Fallback
-    }
-    return INITIAL_WORKERS;
-  });
+  const [workers, setWorkers] = useState<Worker[]>(() =>
+    loadValidatedArray(STORAGE_KEYS.WORKERS, z.array(workerSchema).min(1).max(50), INITIAL_WORKERS)
+  );
 
-  const [cleaningZones, setCleaningZones] = useState<CleaningZone[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ZONES);
-      return saved ? JSON.parse(saved) : INITIAL_CLEANING_ZONES;
-    } catch {
-      return INITIAL_CLEANING_ZONES;
-    }
-  });
+  const [cleaningZones, setCleaningZones] = useState<CleaningZone[]>(() =>
+    loadValidatedArray(STORAGE_KEYS.ZONES, z.array(cleaningZoneSchema).min(1).max(100), INITIAL_CLEANING_ZONES)
+  );
 
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(() => new Date());
 
   const [shifts, setShifts] = useState<Shift[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SHIFTS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const hasValidWorkers = parsed.some((s: Shift) => 
-          s.workerId.includes('pierre') || s.workerId.includes('roberto') || s.workerId.includes('jose') || s.workerId.includes('alex')
-        );
-        const has43hTarget = parsed.some((s: Shift) => s.effectiveHours === 7.3);
-        if (hasValidWorkers && has43hTarget && Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {
-      // Fallback
-    }
-    // Generate initial schedules for this week and next week with authentic workers
     const currentWeekShifts = generateWeeklySchedule(INITIAL_WORKERS, INITIAL_CLEANING_ZONES, new Date());
     const nextWeekDate = new Date();
     nextWeekDate.setDate(nextWeekDate.getDate() + 7);
     const nextWeekShifts = generateWeeklySchedule(INITIAL_WORKERS, INITIAL_CLEANING_ZONES, nextWeekDate, currentWeekShifts);
-    return [...currentWeekShifts, ...nextWeekShifts];
+    return loadValidatedArray(
+      STORAGE_KEYS.SHIFTS,
+      z.array(shiftSchema).max(20_000),
+      [...currentWeekShifts, ...nextWeekShifts]
+    );
   });
 
-  const [tasks, setTasks] = useState<DailyTaskItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.TASKS);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [tasks, setTasks] = useState<DailyTaskItem[]>(() =>
+    loadValidatedArray(STORAGE_KEYS.TASKS, z.array(taskSchema).max(50_000), [])
+  );
 
   const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SWAPS);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // Fallback
-    }
-    return [
+    const seed: SwapRequest[] = [
       {
         id: 'swap-demo-1',
         requesterWorkerId: 'worker-pierre',
@@ -183,16 +139,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         adminNotes: '',
       },
     ];
+    return loadValidatedArray(STORAGE_KEYS.SWAPS, z.array(swapRequestSchema).max(10_000), seed);
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // Fallback
-    }
-    return [
+    const seed: AuditLog[] = [
       {
         id: 'log-seed-01',
         timestamp: new Date().toISOString(),
@@ -203,11 +154,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         type: 'auto_schedule',
       },
     ];
+    return loadValidatedArray(STORAGE_KEYS.LOGS, z.array(auditLogSchema).max(5_000), seed);
   });
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    return saved || 'worker-admin';
+    return loadText(STORAGE_KEYS.CURRENT_USER_ID, 'worker-admin');
   });
 
   const [activeTab, setActiveTab] = useState<string>('my_day');
@@ -215,31 +166,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync to LocalStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.WORKERS, JSON.stringify(workers));
+    saveJson(STORAGE_KEYS.WORKERS, workers);
   }, [workers]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ZONES, JSON.stringify(cleaningZones));
+    saveJson(STORAGE_KEYS.ZONES, cleaningZones);
   }, [cleaningZones]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(shifts));
+    saveJson(STORAGE_KEYS.SHIFTS, shifts);
   }, [shifts]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+    saveJson(STORAGE_KEYS.TASKS, tasks);
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SWAPS, JSON.stringify(swapRequests));
+    saveJson(STORAGE_KEYS.SWAPS, swapRequests);
   }, [swapRequests]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(auditLogs));
+    saveJson(STORAGE_KEYS.LOGS, auditLogs);
   }, [auditLogs]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
+    saveText(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
   }, [currentUserId]);
 
   // Current logged in worker/admin
@@ -251,6 +202,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return calculateFairnessMetrics(workers, shifts, cleaningZones);
   }, [workers, shifts, cleaningZones]);
 
+  const requireAdmin = (): boolean => {
+    if (currentUser.role === 'admin') return true;
+    alert('Esta acción requiere permisos de encargado.');
+    return false;
+  };
+
   const addAuditLog = (
     actorName: string,
     action: string,
@@ -258,7 +215,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     type: AuditLog['type']
   ) => {
     const newLog: AuditLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: createId('log'),
       timestamp: new Date().toISOString(),
       actorId: currentUser.id,
       actorName,
@@ -284,18 +241,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Switch User
   const switchUserById = (workerId: string) => {
-    setCurrentUserId(workerId);
+    if (import.meta.env.DEV && workers.some((worker) => worker.id === workerId)) {
+      setCurrentUserId(workerId);
+    }
   };
 
   // Worker CRUD
   const addWorker = (workerData: Omit<Worker, 'id'>): boolean => {
+    if (!requireAdmin()) return false;
     if (workers.length >= 12) {
       alert('Se ha alcanzado el límite máximo de trabajadores configurados.');
       return false;
     }
     const newWorker: Worker = {
       ...workerData,
-      id: `worker-${Date.now()}`,
+      id: createId('worker'),
     };
     setWorkers((prev) => [...prev, newWorker]);
     addAuditLog(
@@ -308,8 +268,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateWorker = (id: string, workerData: Partial<Worker>) => {
+    if (currentUser.role !== 'admin' && currentUser.id !== id) return;
+    const safeWorkerData = currentUser.role === 'admin'
+      ? workerData
+      : {
+          name: workerData.name,
+          email: workerData.email,
+          phone: workerData.phone,
+          avatar: workerData.avatar,
+          preferredRestDay: workerData.preferredRestDay,
+          notes: workerData.notes,
+          pin: workerData.pin,
+        };
     setWorkers((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, ...workerData } : w))
+      prev.map((w) => (w.id === id ? { ...w, ...safeWorkerData } : w))
     );
     addAuditLog(
       currentUser.name,
@@ -320,6 +292,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteWorker = (id: string) => {
+    if (!requireAdmin()) return;
     const workerToDelete = workers.find((w) => w.id === id);
     if (!workerToDelete) return;
     setWorkers((prev) => prev.filter((w) => w.id !== id));
@@ -334,6 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateWorkerStatus = (id: string, status: WorkerStatus, reason?: string) => {
+    if (!requireAdmin()) return;
     const worker = workers.find((w) => w.id === id);
     if (!worker) return;
 
@@ -378,6 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Shift & Scheduler
   const generateScheduleForWeek = (startDate: Date = selectedWeekDate) => {
+    if (!requireAdmin()) return;
     const weekDates = getWeekDates(startDate);
     const weekStartStr = formatDateToISO(weekDates[0]);
     const weekEndStr = formatDateToISO(weekDates[6]);
@@ -400,6 +375,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateShift = (shiftId: string, updates: Partial<Shift>) => {
+    if (!requireAdmin()) return;
     setShifts((prev) =>
       prev.map((s) => {
         if (s.id === shiftId) {
@@ -417,6 +393,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const assignDayOff = (workerId: string, dateStr: string) => {
+    if (!requireAdmin()) return;
     const existing = shifts.find((s) => s.workerId === workerId && s.date === dateStr);
     if (existing) {
       updateShift(existing.id, {
@@ -466,6 +443,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleTask = (taskId: string, workerId: string) => {
+    if (currentUser.role !== 'admin' && currentUser.id !== workerId) return;
     setTasks((prev) => {
       const taskIndex = prev.findIndex((t) => t.id === taskId);
       if (taskIndex >= 0) {
@@ -480,11 +458,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         newArr[taskIndex] = updated;
         return newArr;
       }
-      return prev;
+      const generated = shifts
+        .filter((shift) => shift.workerId === workerId)
+        .flatMap((shift) => getTasksForShift(shift))
+        .find((task) => task.id === taskId);
+      if (!generated) return prev;
+      return [...prev, {
+        ...generated,
+        completed: true,
+        completedAt: new Date().toISOString(),
+        completedBy: workerId,
+      }];
     });
   };
 
   const resetZoneTasksForDay = (dateStr: string, zoneId: string) => {
+    if (!requireAdmin()) return;
     setTasks((prev) =>
       prev.map((t) => {
         if (t.date === dateStr && t.zoneId === zoneId) {
@@ -497,6 +486,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Cleaning Zones
   const updateZonePriority = (zoneId: string, newPriority: number) => {
+    if (!requireAdmin()) return;
     setCleaningZones((prev) => {
       const updated = prev.map((z) => (z.id === zoneId ? { ...z, priority: newPriority } : z));
       return updated.sort((a, b) => a.priority - b.priority);
@@ -510,6 +500,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateZone = (zoneId: string, updates: Partial<CleaningZone>) => {
+    if (!requireAdmin()) return;
     setCleaningZones((prev) =>
       prev.map((z) => (z.id === zoneId ? { ...z, ...updates } : z))
     );
@@ -522,6 +513,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateZoneTasks = (zoneId: string, taskList: string[]) => {
+    if (!requireAdmin()) return;
     setCleaningZones((prev) =>
       prev.map((z) => (z.id === zoneId ? { ...z, defaultTasks: taskList } : z))
     );
@@ -543,6 +535,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteZone = (zoneId: string) => {
+    if (!requireAdmin()) return;
     const targetZone = cleaningZones.find((z) => z.id === zoneId);
     if (!targetZone) return;
     setCleaningZones((prev) => {
@@ -563,9 +556,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addZone = (zoneData: Omit<CleaningZone, 'id'>) => {
+    if (!requireAdmin()) return;
     const newZone: CleaningZone = {
       ...zoneData,
-      id: `zone-${Date.now()}`,
+      id: createId('zone'),
     };
     setCleaningZones((prev) => [...prev, newZone].sort((a, b) => a.priority - b.priority));
     addAuditLog(
@@ -599,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const newRequest: SwapRequest = {
-      id: `swap-${Date.now()}`,
+      id: createId('swap'),
       requesterWorkerId,
       requesterShiftDate,
       requesterShiftType,
@@ -645,6 +639,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const adminReviewSwap = (swapId: string, approved: boolean, notes?: string) => {
+    if (!requireAdmin()) return;
     const swap = swapRequests.find((s) => s.id === swapId);
     if (!swap) return;
 
@@ -706,9 +701,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const exportDatabaseBackup = () => {
+    if (!requireAdmin()) return;
     try {
       const backupData = {
-        schema: 'garzon_turnos_backup_v4',
+        schema: 'garzon_turnos_backup_v5',
         exportedAt: new Date().toISOString(),
         exportedBy: currentUser.name,
         workers,
@@ -739,18 +735,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const importDatabaseBackup = (jsonContent: string): { success: boolean; message: string } => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'La restauración requiere permisos de encargado.' };
+    }
     try {
-      const parsed = JSON.parse(jsonContent);
-      if (!parsed || !Array.isArray(parsed.workers) || !Array.isArray(parsed.cleaningZones)) {
-        return { success: false, message: 'El archivo JSON no tiene la estructura de base de datos válida.' };
+      if (jsonContent.length > 10_000_000) {
+        return { success: false, message: 'El respaldo supera el límite seguro de 10 MB.' };
       }
+      const result = backupSchema.safeParse(JSON.parse(jsonContent));
+      if (!result.success) {
+        return { success: false, message: 'El respaldo no cumple el esquema vigente o contiene datos inválidos.' };
+      }
+      const parsed = result.data;
 
       setWorkers(parsed.workers);
       setCleaningZones(parsed.cleaningZones);
-      if (Array.isArray(parsed.shifts)) setShifts(parsed.shifts);
-      if (Array.isArray(parsed.tasks)) setTasks(parsed.tasks);
-      if (Array.isArray(parsed.swapRequests)) setSwapRequests(parsed.swapRequests);
-      if (Array.isArray(parsed.auditLogs)) setAuditLogs(parsed.auditLogs);
+      setShifts(parsed.shifts);
+      setTasks(parsed.tasks);
+      setSwapRequests(parsed.swapRequests);
+      setAuditLogs(parsed.auditLogs);
 
       addAuditLog(
         currentUser.name,
@@ -767,6 +770,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const resetToInitialData = () => {
+    if (!requireAdmin()) return;
     setWorkers(INITIAL_WORKERS);
     setCleaningZones(INITIAL_CLEANING_ZONES);
     const initialWeekShifts = generateWeeklySchedule(INITIAL_WORKERS, INITIAL_CLEANING_ZONES, new Date());
@@ -777,7 +781,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTasks([]);
     setSwapRequests([]);
     setCurrentUserId('worker-admin');
-    localStorage.clear();
+    clearAppStorage();
     alert('Base de datos restablecida con los trabajadores reales oficiales.');
   };
 

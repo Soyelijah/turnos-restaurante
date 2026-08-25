@@ -13,6 +13,7 @@ import {
   LogIn,
   KeyRound,
   UserCheck,
+  ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -129,8 +130,8 @@ export const Navbar: React.FC<{
               <span className="hidden sm:inline">Descargar App</span>
             </button>
 
-            {/* Quick Switch Worker Selector */}
-            <div className="relative flex items-center">
+            {/* Local preview tool. Never expose identity switching in production. */}
+            {import.meta.env.DEV && <div className="relative flex items-center">
               <label htmlFor="quick-user-select" className="sr-only">
                 Cambiar Usuario
               </label>
@@ -160,7 +161,7 @@ export const Navbar: React.FC<{
                     ))}
                 </optgroup>
               </select>
-            </div>
+            </div>}
 
             {/* User Profile & Session Dropdown Menu */}
             <div className="relative" ref={menuRef}>
@@ -215,7 +216,7 @@ export const Navbar: React.FC<{
                       </button>
                     )}
 
-                    <button
+                    {import.meta.env.DEV && <button
                       id="menu-login-pin-btn"
                       onClick={() => {
                         setIsMenuOpen(false);
@@ -225,9 +226,9 @@ export const Navbar: React.FC<{
                     >
                       <KeyRound className="w-4 h-4 text-amber-400" />
                       <span>Ingresar con Código / PIN</span>
-                    </button>
+                    </button>}
 
-                    <button
+                    {import.meta.env.DEV && <button
                       id="menu-logout-btn"
                       onClick={() => {
                         setIsMenuOpen(false);
@@ -237,7 +238,14 @@ export const Navbar: React.FC<{
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Cerrar Sesión / Cambiar</span>
-                    </button>
+                    </button>}
+
+                    {!import.meta.env.DEV && (
+                      <div className="flex items-center gap-2.5 px-3 py-2 text-[11px] font-semibold text-emerald-300">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Sesión privada protegida</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -248,4 +256,3 @@ export const Navbar: React.FC<{
     </header>
   );
 };
-

@@ -55,8 +55,10 @@ const MainContent: React.FC = () => {
       {/* Install PWA Prompt Modal */}
       <InstallPWAModal />
 
-      {/* Login & User Switcher Modal */}
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      {/* Identity switching exists only in the local preview. */}
+      {import.meta.env.DEV && (
+        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      )}
 
       {/* Profile & Personal Info Modal (Accessible everywhere) */}
       <EditProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />

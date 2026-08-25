@@ -2,5 +2,5 @@
   "name": "GarzónTurnos Pro",
   "description": "Sistema de gestión de turnos interactivos, zonas de aseo rotativas y equitativas, descansos y solicitudes para garzones y administradores.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": ["SHIFT_PLANNING", "CLEANING_ROTATION", "AUDIT_LOG"]
 }

@@ -1,0 +1,11 @@
+{
+  "name": "GarzónTurnos Pro",
+  "short_name": "Turnos Pro",
+  "description": "Operación de turnos, aseo y coordinación del equipo de sala.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "lang": "es-CL",
+  "categories": ["business", "productivity"]
+}
