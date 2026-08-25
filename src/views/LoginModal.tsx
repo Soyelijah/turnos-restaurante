@@ -85,19 +85,34 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
             </div>
           </header>
 
-          <div className="relative z-20 max-w-xl p-9 xl:p-11">
+          <div className="login-waiter-entry pointer-events-none absolute bottom-0 right-[-2.5rem] z-20 w-[46%] max-w-[315px]" aria-hidden="true">
+            <div className="login-shift-badge absolute right-[72%] top-[24%] z-30 flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/15 bg-slate-950/85 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-xl backdrop-blur-md">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-400 text-slate-950">
+                <Check className="h-3 w-3" />
+              </span>
+              Turno listo
+            </div>
+            <img
+              src="/assets/garzon-service.webp"
+              alt=""
+              className="login-waiter-idle relative z-20 h-auto w-full drop-shadow-[0_28px_28px_rgba(0,0,0,0.55)]"
+            />
+            <span className="absolute bottom-5 left-1/2 z-10 h-8 w-3/5 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
+          </div>
+
+          <div className="relative z-20 max-w-[410px] p-9 xl:p-11">
             <p className="mb-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.26em] text-amber-300">
               <span className="h-px w-8 bg-amber-400" />
               El pase empieza aquí
             </p>
-            <h2 className="max-w-lg text-4xl font-black leading-[1.06] tracking-[-0.04em] text-white xl:text-5xl">
+            <h2 className="max-w-[390px] text-4xl font-black leading-[1.06] tracking-[-0.04em] text-white xl:text-[2.7rem]">
               Tu turno, tu zona y tu equipo en un solo lugar.
             </h2>
-            <p className="mt-5 max-w-md text-sm leading-6 text-slate-300">
+            <p className="mt-5 max-w-[350px] text-sm leading-6 text-slate-300">
               Entra antes del servicio para revisar tu jornada, confirmar cambios y llegar a sala con todo claro.
             </p>
 
-            <div className="mt-8 grid max-w-lg grid-cols-3 gap-2">
+            <div className="mt-8 grid max-w-[365px] grid-cols-3 gap-2">
               {[
                 { icon: Clock3, label: 'Turno', value: 'Al día' },
                 { icon: MapPinned, label: 'Zona', value: 'Asignada' },
@@ -119,17 +134,24 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
               type="button"
               onClick={onClose}
               aria-label="Cerrar acceso"
-              className="absolute right-5 top-5 z-10 grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white/70 text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-950"
+              className="absolute right-5 top-[13rem] z-30 grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white/90 text-slate-500 shadow-sm transition-colors hover:border-slate-400 hover:text-slate-950 lg:top-5"
             >
               <X className="h-4 w-4" />
             </button>
           )}
 
-          <div className="relative overflow-hidden border-b border-slate-900/10 bg-slate-950 px-6 py-5 text-white lg:hidden">
+          <div className="relative min-h-48 overflow-hidden border-b border-slate-900/10 bg-slate-950 px-6 py-5 text-white lg:hidden">
             <div className="absolute inset-0 opacity-35">
               <img src="/og.png" alt="" className="h-full w-full object-cover object-[75%_58%]" />
             </div>
-            <div className="relative flex items-center gap-3">
+            <div className="login-waiter-entry absolute -bottom-7 right-2 h-56" aria-hidden="true">
+              <img
+                src="/assets/garzon-service.webp"
+                alt=""
+                className="login-waiter-idle h-full w-auto drop-shadow-[0_12px_18px_rgba(0,0,0,0.55)]"
+              />
+            </div>
+            <div className="relative z-10 flex items-center gap-3">
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-400 text-slate-950">
                 <UtensilsCrossed className="h-5 w-5" />
               </span>
@@ -138,6 +160,7 @@ export const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
                 <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-300">Acceso de equipo · Sala</p>
               </div>
             </div>
+            <p className="relative z-10 mt-9 max-w-[190px] text-lg font-black leading-tight tracking-tight">Tu servicio comienza aquí.</p>
           </div>
 
           <div className="flex flex-1 items-center px-6 py-8 sm:px-10 sm:py-10 xl:px-14">

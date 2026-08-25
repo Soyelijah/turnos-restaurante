@@ -7,6 +7,51 @@
     #030914;
 }
 
+.login-waiter-entry {
+  animation: waiter-arrival 900ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+.login-waiter-idle {
+  transform-origin: 50% 100%;
+  animation: waiter-service-idle 4.2s 900ms ease-in-out infinite;
+}
+
+.login-shift-badge {
+  animation: shift-badge-arrival 650ms 650ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+@keyframes waiter-arrival {
+  from {
+    opacity: 0;
+    transform: translate3d(4.5rem, 1.5rem, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes waiter-service-idle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.25deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(0.25deg);
+  }
+}
+
+@keyframes shift-badge-arrival {
+  from {
+    opacity: 0;
+    transform: translate3d(1rem, 0.5rem, 0) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 @media (min-width: 1024px) {
   .service-ticket-pane::before {
     position: absolute;
@@ -88,6 +133,12 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .login-waiter-entry,
+  .login-waiter-idle,
+  .login-shift-badge {
+    animation: none !important;
   }
 }
 
