@@ -10,6 +10,7 @@ const uploadedAvatar = z.string()
   .max(2_800_000)
   .regex(/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i);
 const optionalEmail = z.union([z.literal(''), z.string().trim().email().max(254)]);
+const chileMobile = z.string().regex(/^\+56 9 \d{4} \d{4}$/);
 
 export const workerSchema = z.object({
   id,
@@ -17,7 +18,7 @@ export const workerSchema = z.object({
   code: z.string().trim().min(2).max(24),
   pin: z.string().trim().min(4).max(12),
   email: optionalEmail,
-  phone: shortText,
+  phone: chileMobile,
   avatar: z.union([z.literal(''), remoteAvatar, uploadedAvatar]),
   role: z.enum(['admin', 'worker']),
   status: z.enum(['active', 'vacation', 'medical_leave', 'resigned', 'inactive']),

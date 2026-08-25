@@ -20,6 +20,11 @@ describe('domain validation', () => {
     expect(workerSchema.safeParse({ ...worker, avatar: uploadedAvatar }).success).toBe(true);
   });
 
+  it('rejects Chilean mobile numbers that do not contain nine digits', () => {
+    expect(workerSchema.safeParse({ ...worker, phone: '+56 9 8765 4321' }).success).toBe(true);
+    expect(workerSchema.safeParse({ ...worker, phone: '+56 9 8765' }).success).toBe(false);
+  });
+
   it('rejects executable or unbounded backup shapes', () => {
     const result = backupSchema.safeParse({ schema: 'garzon_turnos_backup_v5', workers: [worker] });
     expect(result.success).toBe(false);

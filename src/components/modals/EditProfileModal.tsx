@@ -27,6 +27,20 @@ const PRESET_AVATARS = [
   'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
 ];
 
+const extractChileMobileDigits = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  return (digits.startsWith('56') ? digits.slice(2) : digits).slice(0, 9);
+};
+
+const formatChileMobileDigits = (digits: string): string => {
+  if (digits.length <= 1) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 1)} ${digits.slice(1)}`;
+  return `${digits.slice(0, 1)} ${digits.slice(1, 5)} ${digits.slice(5)}`;
+};
+
+const toStoredChileMobile = (digits: string): string =>
+  `+56 ${formatChileMobileDigits(digits)}`;
+
 export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   isOpen,
   onClose,
@@ -34,7 +48,7 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
   const { currentUser, updateWorker, triggerConfetti } = useApp();
 
   const [name, setName] = useState(currentUser.name);
-  const [phone, setPhone] = useState(currentUser.phone || '');
+  const [phone, setPhone] = useState(() => extractChileMobileDigits(currentUser.phone || ''));
   const [email, setEmail] = useState(currentUser.email || '');
   const [pin, setPin] = useState(currentUser.pin || '1234');
   const [avatar, setAvatar] = useState(currentUser.avatar || '');
@@ -71,10 +85,14 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (phone.length !== 9) {
+      setSaveError('Ingresa los 9 dígitos del celular, sin repetir el prefijo +56.');
+      return;
+    }
 
     const saved = updateWorker(currentUser.id, {
       name: name.trim(),
-      phone: phone.trim(),
+      phone: toStoredChileMobile(phone),
       email: email.trim(),
       pin: pin.trim(),
       avatar: avatar.trim(),
@@ -241,19 +259,38 @@ export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label htmlFor="profile-mobile" className="block font-semibold text-slate-300 mb-1">
                   Teléfono de Contacto (WhatsApp)
                 </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <div className="flex h-[42px] overflow-hidden rounded-xl border border-slate-700 bg-slate-800 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20">
+                  <span className="flex items-center gap-2 border-r border-slate-700 bg-slate-900/70 px-3 font-mono font-bold text-slate-300" aria-hidden="true">
+                    <Phone className="h-4 w-4 text-slate-500" />
+                    +56
+                  </span>
                   <input
+                    id="profile-mobile"
                     type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+56 9 1234 5678"
-                    className="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl pl-9 pr-3 py-2.5"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    required
+                    maxLength={11}
+                    value={formatChileMobileDigits(phone)}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, '').slice(0, 9));
+                      setSaveError('');
+                    }}
+                    placeholder="9 8765 4321"
+                    aria-describedby="profile-mobile-help"
+                    aria-invalid={phone.length > 0 && phone.length !== 9}
+                    className="min-w-0 flex-1 bg-transparent px-3 font-mono text-slate-100 outline-none placeholder:text-slate-500"
                   />
+                  <span className="flex items-center pr-3 font-mono text-[10px] text-slate-500" aria-hidden="true">
+                    {phone.length}/9
+                  </span>
                 </div>
+                <p id="profile-mobile-help" className="mt-1.5 text-[10px] text-slate-500">
+                  Escribe solo los 9 dígitos del celular.
+                </p>
               </div>
 
               <div>
