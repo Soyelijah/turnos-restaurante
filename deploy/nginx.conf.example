@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    server_name turnos.zgamersa.com;
+    root /var/www/turnos-restaurante/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~* \.(?:css|js)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:png|webmanifest)$ {
+        expires 30d;
+        try_files $uri =404;
+    }
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data: https://images.unsplash.com; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" always;
+}
