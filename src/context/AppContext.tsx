@@ -165,7 +165,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return loadText(STORAGE_KEYS.CURRENT_USER_ID, 'worker-admin');
   });
   const [session, dispatchSession] = useReducer(sessionReducer, undefined, () => ({
-    isAuthenticated: loadText(STORAGE_KEYS.SESSION, 'true') === 'true',
+    // Security baseline: a missing or invalid client session must never grant access.
+    isAuthenticated: loadText(STORAGE_KEYS.SESSION, 'false') === 'true',
   }));
 
   const [activeTab, setActiveTab] = useState<string>('my_day');
