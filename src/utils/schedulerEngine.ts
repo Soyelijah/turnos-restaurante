@@ -52,7 +52,7 @@ export function formatMealBreaksString(breaks?: { time: string }[]): string {
  * - Legal Limit: EXACTLY 43 hours per week per worker (excluding meal breaks).
  * - Operating Hours:
  *   * Lunes a Miércoles: 11:00 am - 21:00 hrs (Apertura 11:00-19:20 [7.3h] / Cierre 12:40-21:00 [7.3h] con 1h colación)
- *   * Jueves a Sábados: 11:00 am - 22:00 hrs (Apertura 11:00-19:20 [7.3h] / Cierre 13:40-22:00 [7.3h] con 1h colación)
+ *   * De jueves a sábado: 11:00 am - 22:00 hrs (apertura 11:00-19:20 [7.3h] / cierre 13:40-22:00 [7.3h] con 1h de colación)
  *   * Domingos: 11:00 am - 18:00 hrs (Entrada y salida conjunta 11:00 a 18:00, 6.5h efectivas, 30 min colación)
  *   * Total semanal: 5 turnos de 7.3h + 1 domingo de 6.5h = 43.0h efectivas trabajadas aparte de la colación
  * - Guardias de Colación (Lunch Guard Duty):
@@ -199,31 +199,6 @@ export function generateWeeklySchedule(
       });
     });
 
-    // 2. Determine guard workers for today:
-    // Mon-Fri: 1 guard worker
-    // Sat-Sun: 2 guard workers
-    const guardsNeeded = isWeekend ? 2 : 1;
-
-    // Pick working workers with lowest guard count
-    const candidateGuardWorkers = [...workingWorkersToday].sort((a, b) => {
-      const countA = workerGuardCount.get(a.id) || 0;
-      const countB = workerGuardCount.get(b.id) || 0;
-      if (countA !== countB) return countA - countB;
-      // Rotation tie-breaker
-      return ((dayIndex * 3 + activeWorkers.indexOf(a)) % activeWorkers.length) -
-             ((dayIndex * 3 + activeWorkers.indexOf(b)) % activeWorkers.length);
-    });
-
-    const guardWorkerIds = new Set<string>(
-      candidateGuardWorkers.slice(0, guardsNeeded).map((w) => w.id)
-    );
-
-    // Update guard counts
-    guardWorkerIds.forEach((id) => {
-      const current = workerGuardCount.get(id) || 0;
-      workerGuardCount.set(id, current + 1);
-    });
-
     if (isSunday) {
       // ==========================================
       // DOMINGO: ALEATORIO CON ANTI-REPETICIÓN + 2 GUARDIAS (6.5h efectivas)
@@ -232,6 +207,18 @@ export function generateWeeklySchedule(
       const shuffledWorkers = [...workingWorkersToday].sort(() => Math.random() - 0.5);
       const availableZoneIds = sortedZones.map((z) => z.id);
       const assignedZonesToday = new Set<string>();
+
+      // Sunday guards can be selected from the whole team because everyone
+      // starts at 11:00. Count only assignments that are emitted in a shift.
+      const guardWorkerIds = new Set(
+        [...workingWorkersToday]
+          .sort((a, b) => (workerGuardCount.get(a.id) || 0) - (workerGuardCount.get(b.id) || 0))
+          .slice(0, 2)
+          .map((worker) => worker.id),
+      );
+      guardWorkerIds.forEach((workerId) => {
+        workerGuardCount.set(workerId, (workerGuardCount.get(workerId) || 0) + 1);
+      });
 
       shuffledWorkers.forEach((worker) => {
         const pastSundayZones = workerSundayZoneHistory.get(worker.id) || [];
@@ -299,7 +286,7 @@ export function generateWeeklySchedule(
       // 2. REGLA DE 5 O MÁS TRABAJADORES:
       //    - Se asignan exactamente 4 trabajadores a las 11:00 AM (Apertura Corrido 11:00 - 19:20, 7.3h netas)
       //      para garantizar el mínimo requerido de limpieza.
-      //    - Los trabajadores adicionales (5to en adelante) se asignan AUTOMÁTICAMENTE a entrar más tarde de corrido:
+      //    - Los trabajadores adicionales (5.º en adelante) se asignan AUTOMÁTICAMENTE a entrar más tarde de corrido:
       //      * Lun-Mié: Turno Cierre Corrido (12:40 - 21:00, 7.3h netas)
       //      * Jue-Sáb: Turno Cierre Corrido (13:40 - 22:00, 7.3h netas)
       //    - Rotación equitativa día a día entre todo el equipo.
@@ -340,7 +327,7 @@ export function generateWeeklySchedule(
         // ASIGNACIÓN ESTRICTA DE ZONAS PRIORITARIAS:
         // Los 4 trabajadores que entran a las 11:00 AM reciben inequívocamente las 4 zonas prioritarias (1..4)
         // rotadas equitativamente entre ellos día a día.
-        // Si hay un 5to o 6to trabajador en el día, se les asignan las zonas secundarias o de apoyo.
+        // Si hay un 5.º o 6.º trabajador en el día, se les asignan las zonas secundarias o de apoyo.
         let assignedZone: CleaningZone;
         if (isOpeningCrew) {
           const openingWorkerPosition = openingWorkersList.findIndex((w) => w.id === worker.id);
@@ -376,7 +363,7 @@ export function generateWeeklySchedule(
               shiftCategory = 'open_straight';
             }
           } else {
-            // Jueves a Sábados
+            // De jueves a sábado
             if (isSplitCloser) {
               scheduleConfig = SHIFT_SCHEDULE_CONFIG.thu_sat_split;
               shiftNotes = 'Turno Apertura 11:00 con Pausa Intermedia & Cierre 22:00 (11:00 a 22:00 | Limpieza 11:00 + Pausa 15:30-18:10 | 7.3h netas)';
@@ -391,7 +378,7 @@ export function generateWeeklySchedule(
           // ==========================================
           // CASO 5 O MÁS TRABAJADORES:
           // rotIdx 0..3 (4 trabajadores) => Entran a las 11:00 AM Corrido (11:00 - 19:20) para Limpieza
-          // rotIdx >= 4 (5to en adelante) => Entran más tarde Corrido para Cierre (12:40-21:00 / 13:40-22:00)
+          // rotIdx >= 4 (5.º en adelante) => Entran más tarde Corrido para Cierre (12:40-21:00 / 13:40-22:00)
           // ==========================================
           const isMorningCrew = rotIdx < 4;
 
@@ -407,7 +394,7 @@ export function generateWeeklySchedule(
               shiftCategory = 'late_close';
             }
           } else {
-            // Jueves a Sábados
+            // De jueves a sábado
             if (isMorningCrew) {
               scheduleConfig = SHIFT_SCHEDULE_CONFIG.thu_sat_open;
               shiftNotes = 'Turno Apertura Corrido (11:00 a 19:20 | Limpieza 11:00 + Salida 19:20 | 7.3h netas)';
@@ -472,7 +459,7 @@ export function generateWeeklySchedule(
 
 /**
  * Calculates equity and fairness stats across all workers
- * Validates compliance against WEEKLY_LEGAL_HOURS_TARGET (42.0 hrs) and guard distributions
+ * Validates compliance against WEEKLY_LEGAL_HOURS_TARGET (43.0 hours) and guard distributions
  */
 export function calculateFairnessMetrics(
   workers: Worker[],
@@ -550,4 +537,3 @@ export function calculateFairnessMetrics(
       };
     });
 }
-

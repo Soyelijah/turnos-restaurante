@@ -67,7 +67,7 @@ export const SHIFT_SCHEDULE_CONFIG = {
     ],
     badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
   },
-  // Jueves a Sábados Turno Apertura & Limpieza: 11:00 - 19:20 (Colación: 12:00 - 12:30 ; 18:00 - 18:30, 7.3h efectivas)
+  // De jueves a sábado, turno de apertura y limpieza: 11:00 - 19:20 (colación: 12:00 - 12:30; 18:00 - 18:30, 7.3h efectivas)
   thu_sat_open: {
     label: 'Jue-Sáb Apertura Corrido (11:00 - 19:20)',
     startTime: '11:00',
@@ -77,7 +77,7 @@ export const SHIFT_SCHEDULE_CONFIG = {
     mealBreaks: MEAL_BREAKS_REGULAR_TWO,
     badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
   },
-  // Jueves a Sábados Turno Apertura con Pausa Intermedia & Cierre (cuando hay 4 trabajadores en total)
+  // De jueves a sábado, turno de apertura con pausa intermedia y cierre (cuando hay 4 trabajadores en total)
   // Entran a las 11:00 am a limpiar zonas, toman descanso intermedio en la tarde de 15:30 a 18:10 y cierran a las 22:00 (7.3h efectivas)
   thu_sat_split: {
     label: 'Jue-Sáb Apertura 11:00 + Pausa & Cierre (11:00 - 22:00)',
@@ -92,7 +92,7 @@ export const SHIFT_SCHEDULE_CONFIG = {
     ],
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
-  // Jueves a Sábados Turno Cierre Corrido / Entrada Tarde: 13:40 - 22:00 (cuando hay 5 o más trabajadores)
+  // De jueves a sábado, turno de cierre corrido o entrada tarde: 13:40 - 22:00 (cuando hay 5 o más trabajadores)
   thu_sat_close: {
     label: 'Jue-Sáb Cierre Corrido (13:40 - 22:00)',
     startTime: '13:40',

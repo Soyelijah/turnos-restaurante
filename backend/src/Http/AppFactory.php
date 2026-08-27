@@ -56,7 +56,11 @@ final class AppFactory
                 ResponseInterface $response,
             ) use ($sessions, $sessionTtl, $secureCookie, $cookieName): ResponseInterface {
                 $existingToken = (string) ($request->getCookieParams()[$cookieName] ?? '');
-                $sessions->revoke($existingToken);
+                $csrfToken = $sessions->rotateCsrf($existingToken);
+                if ($csrfToken !== null) {
+                    return JsonResponse::success($response, ['csrfToken' => $csrfToken]);
+                }
+
                 $session = $sessions->createAnonymous(
                     $request->getHeaderLine('User-Agent'),
                     self::clientIp($request),

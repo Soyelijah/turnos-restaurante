@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GarzónTurnos Pro">
+  <rect width="64" height="64" rx="16" fill="#fbbf24"/>
+  <path d="M20 13v14m6-14v14m-3-14v38m-7-38v9c0 5 3 8 7 8s7-3 7-8v-9M43 13c-5 5-7 11-7 18v4h7v16" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

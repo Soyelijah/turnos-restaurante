@@ -424,7 +424,7 @@ export const ScheduleCalendarView: React.FC = () => {
 
           <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-amber-300">Jueves a Sábados</span>
+              <span className="font-bold text-amber-300">De jueves a sábado</span>
               <span className="font-black text-white bg-amber-500/20 px-1.5 py-0.5 rounded text-[11px]">11:00 - 22:00</span>
             </div>
             <p className="text-[11px] text-slate-300">

@@ -89,6 +89,26 @@ final class SessionService
             && hash_equals($session['csrf_token_hash'], $this->hashToken($csrfToken));
     }
 
+    public function rotateCsrf(string $sessionToken): ?string
+    {
+        if ($sessionToken === '') {
+            return null;
+        }
+
+        $csrfToken = $this->generateToken();
+        $rotate = $this->database->prepare(
+            'UPDATE auth_sessions SET csrf_token_hash = :csrf_token_hash '
+            . 'WHERE id_hash = :id_hash AND revoked_at IS NULL AND expires_at > :now'
+        );
+        $rotate->execute([
+            'csrf_token_hash' => $this->hashToken($csrfToken),
+            'id_hash' => $this->hashToken($sessionToken),
+            'now' => $this->now()->format('Y-m-d H:i:s'),
+        ]);
+
+        return $rotate->rowCount() === 1 ? $csrfToken : null;
+    }
+
     public function revoke(string $sessionToken): void
     {
         if ($sessionToken === '') {

@@ -106,4 +106,4 @@ Rechazada para producción.
 3. Implementar CSRF, login, logout y consulta de sesión.
 4. Migrar personal, zonas, turnos, tareas y permutas a endpoints protegidos.
 5. Integrar React y retirar PIN, sesión, roles y datos operativos de `localStorage`.
-6. Excluir `/api/` del service worker y añadir pruebas E2E.
+6. ~~Excluir `/api/` del service worker~~ (completado) y añadir pruebas E2E de los flujos críticos.

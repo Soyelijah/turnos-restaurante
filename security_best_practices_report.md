@@ -88,34 +88,31 @@ Dictamen: **apto para demostración/local; no apto todavía para producción con
 - Impacto: los PIN de cuatro dígitos son automatizables. Actualmente la exposición en el bundle hace innecesario incluso el ataque por fuerza bruta.
 - Corrección: validar en backend, aplicar rate limiting por cuenta/IP/dispositivo, retraso progresivo y alertas; considerar credenciales más robustas o acceso con enlace/código temporal.
 
-### SEC-006 — El service worker almacenará cualquier GET del mismo origen
+### SEC-006 — Cache indiscriminado del service worker (corregido)
 
-- Severidad: **Media antes de añadir la API**
+- Severidad: **Corregida**
 - Ubicación: `public/sw.js:18-29`
-- Evidencia: todo GET same-origin con respuesta correcta se copia al cache, sin excluir `/api`, respuestas autenticadas o contenido personal.
-- Impacto: al incorporar backend bajo el mismo dominio, respuestas con horarios o datos personales podrían quedar persistidas y servirse después de cerrar sesión.
-- Corrección: limitar cache a assets estáticos versionados; excluir explícitamente `/api/`, respuestas con `Cache-Control: no-store` y solicitudes autenticadas; limpiar caches de usuario al cerrar sesión.
+- Evidencia actual: el listener ignora `/api/`, solicitudes externas y métodos distintos de GET; tampoco almacena respuestas con `Cache-Control: no-store`. Los assets ausentes sin conexión ya no reciben el HTML de la aplicación como respuesta incorrecta.
+- Verificación: `src/lib/serviceWorkerPolicy.test.ts` ejecuta el service worker real y cubre exclusión de API, `no-store` y fallo offline de assets estáticos.
 
-### BUILD-001 — Dos lockfiles incompatibles describen proyectos distintos
+### BUILD-001 — Dos lockfiles incompatibles (corregido)
 
-- Severidad: **Media**
-- Ubicación: `bun.lock:1-30`, `package.json:1-31`, `package-lock.json`
-- Evidencia: npm instala el proyecto actual, pero `bun.lock` todavía identifica `react-example` e incluye Express, Google GenAI, dotenv y motion que no existen en `package.json`.
-- Impacto: usar Bun en CI o producción produciría un árbol diferente, ampliaría innecesariamente la cadena de suministro y podría generar builds no reproducibles.
-- Corrección: elegir un solo gestor. Si el estándar será npm, eliminar el lockfile de Bun y usar `npm ci` en CI.
+- Severidad: **Corregida**
+- Evidencia actual: el repositorio conserva únicamente `package-lock.json` y la automatización utiliza npm.
+- Verificación: `npm ci --dry-run --ignore-scripts` valida la sincronización de manifiesto y lockfile.
 
 ### TEST-001 — Cobertura insuficiente para reglas críticas
 
 - Severidad: **Media**
 - Ubicación: `src/**/*.test.ts(x)`, `backend/tests/**`
-- Evidencia: existen 8 pruebas frontend y 10 pruebas backend con 57 aserciones. Aún no hay tests del motor de horarios, autorización administrativa completa, persistencia funcional, importación transaccional, permutas, service worker ni navegación E2E.
+- Evidencia: existen 13 pruebas frontend y 11 pruebas backend con 62 aserciones. Ya hay regresiones directas del motor de horarios, persistencia de sesión local y política del service worker; aún faltan autorización administrativa completa, persistencia funcional, importación transaccional, permutas y navegación E2E.
 - Impacto: el build puede estar verde mientras fallan reglas laborales, sincronización o controles de permiso.
 - Corrección: pruebas de servicios/backend, integración con DB real de prueba, regresiones del scheduler, autorización por rol y E2E de los flujos críticos.
 
 ## Controles positivos comprobados
 
 - TypeScript compila sin errores y el build de producción termina correctamente.
-- Las 8 pruebas frontend y las 10 pruebas backend (57 aserciones) pasan.
+- Las 13 pruebas frontend y las 11 pruebas backend (62 aserciones) pasan.
 - PHPStan nivel 8 analiza la API sin errores y todos los archivos PHP pasan validación sintáctica.
 - `npm audit` y `composer audit` reportan 0 vulnerabilidades conocidas.
 - `npm audit signatures` no reporta firmas inválidas ni ausentes.
@@ -140,7 +137,7 @@ No es posible afirmar que las cabeceras estén activas en `zgamersa.com` solo po
 3. Integrar la autenticación de servidor ya creada y ampliar RBAC a cada endpoint funcional.
 4. Migrar datos a la base central con transacciones y auditoría inmutable.
 5. Integrar React con la API y convertir `localStorage` en cache no sensible, nunca fuente de autoridad.
-6. Restringir el service worker, unificar lockfile y ampliar pruebas.
+6. ~~Restringir el service worker y unificar lockfile~~ (completado); continuar ampliando pruebas funcionales y E2E.
 7. Validar HTTPS y cabeceras sobre el dominio real antes del lanzamiento.
 
 ## Conclusión

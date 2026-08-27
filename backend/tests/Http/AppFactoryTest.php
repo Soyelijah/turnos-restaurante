@@ -112,6 +112,54 @@ final class AppFactoryTest extends TestCase
         self::assertSame(401, $app->handle($session)->getStatusCode());
     }
 
+    public function testRefreshingCsrfPreservesAnAuthenticatedSession(): void
+    {
+        $database = $this->createAuthDatabase();
+        $app = \GarzonTurnos\Api\Http\AppFactory::create($database, [
+            'sessionTtl' => 3600,
+            'secureCookie' => false,
+            'cookieName' => 'GTSESSID',
+            'auditPepper' => 'test-only-audit-pepper-with-32-bytes',
+        ]);
+        $requests = new ServerRequestFactory();
+
+        $anonymousResponse = $app->handle($requests->createServerRequest('GET', '/api/v1/auth/csrf'));
+        $anonymousToken = $this->cookieValue($anonymousResponse->getHeaderLine('Set-Cookie'));
+        $anonymousCsrf = $this->decode($anonymousResponse)['data']['csrfToken'];
+        $login = $this->jsonRequest($requests, 'POST', '/api/v1/auth/login', [
+            'identifier' => 'GZ-21',
+            'pin' => '4826',
+        ])
+            ->withCookieParams(['GTSESSID' => $anonymousToken])
+            ->withHeader('X-CSRF-Token', $anonymousCsrf);
+        $loginResponse = $app->handle($login);
+        $authenticatedToken = $this->cookieValue($loginResponse->getHeaderLine('Set-Cookie'));
+        $authenticatedCsrf = $loginResponse->getHeaderLine('X-CSRF-Token');
+
+        $refresh = $requests
+            ->createServerRequest('GET', '/api/v1/auth/csrf')
+            ->withCookieParams(['GTSESSID' => $authenticatedToken]);
+        $refreshResponse = $app->handle($refresh);
+        $refreshedCsrf = $this->decode($refreshResponse)['data']['csrfToken'];
+        $session = $requests
+            ->createServerRequest('GET', '/api/v1/auth/session')
+            ->withCookieParams(['GTSESSID' => $authenticatedToken]);
+        $logout = $requests
+            ->createServerRequest('POST', '/api/v1/auth/logout')
+            ->withCookieParams(['GTSESSID' => $authenticatedToken])
+            ->withHeader('X-CSRF-Token', $refreshedCsrf);
+        $logoutWithPreviousCsrf = $requests
+            ->createServerRequest('POST', '/api/v1/auth/logout')
+            ->withCookieParams(['GTSESSID' => $authenticatedToken])
+            ->withHeader('X-CSRF-Token', $authenticatedCsrf);
+
+        self::assertSame(200, $refreshResponse->getStatusCode());
+        self::assertNotEmpty($refreshedCsrf);
+        self::assertSame(200, $app->handle($session)->getStatusCode());
+        self::assertSame(403, $app->handle($logoutWithPreviousCsrf)->getStatusCode());
+        self::assertSame(200, $app->handle($logout)->getStatusCode());
+    }
+
     private function createAuthDatabase(): PDO
     {
         $database = new PDO('sqlite::memory:');
